@@ -1,0 +1,391 @@
+<!-- LOAD THIS FILE ON YOUR BROWSER TO VIEW SIGGY-NEXUS' ANALYTICS DASHBOARD -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Siggy Analytics Dashboard</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --border: #2a2a2a;
+      --text: #e0e0e0;
+      --muted: #888;
+      --accent: #a78bfa;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --blue: #60a5fa;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .header img { width: 48px; height: 48px; border-radius: 12px; }
+    .header h1 { font-size: 24px; font-weight: 600; }
+    .header .subtitle { color: var(--muted); font-size: 14px; }
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .controls button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+    .controls button:hover { border-color: var(--accent); }
+    .controls button.active { background: var(--accent); color: #000; border-color: var(--accent); }
+    .controls .refresh { margin-left: auto; }
+    .status { margin-left: 12px; color: var(--muted); font-size: 13px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .card .value { font-size: 32px; font-weight: 700; }
+    .card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .card .value.green { color: var(--green); }
+    .card .value.red { color: var(--red); }
+    .card .value.yellow { color: var(--yellow); }
+    .card .value.accent { color: var(--accent); }
+
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .chart-card h3 { font-size: 14px; margin-bottom: 16px; color: var(--muted); }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 120px;
+      padding-top: 8px;
+    }
+    .bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .bar {
+      width: 100%;
+      max-width: 32px;
+      background: var(--accent);
+      border-radius: 4px 4px 0 0;
+      min-height: 2px;
+      transition: height 0.3s;
+    }
+    .bar-label {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 4px;
+      text-align: center;
+    }
+    .bar-value {
+      font-size: 10px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .hbar-chart { display: flex; flex-direction: column; gap: 8px; }
+    .hbar-row { display: flex; align-items: center; gap: 8px; }
+    .hbar-name { width: 80px; font-size: 12px; color: var(--muted); text-align: right; }
+    .hbar-track { flex: 1; background: var(--border); border-radius: 4px; height: 20px; position: relative; overflow: hidden; }
+    .hbar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    .hbar-count { width: 40px; font-size: 12px; text-align: right; }
+
+    .recent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .recent-card h3 { font-size: 14px; margin-bottom: 16px; color: var(--muted); }
+    .recent-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+    .recent-table th {
+      text-align: left;
+      color: var(--muted);
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 10px;
+    }
+    .recent-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .badge.success { background: rgba(74,222,128,0.15); color: var(--green); }
+    .badge.error { background: rgba(248,113,113,0.15); color: var(--red); }
+    .badge.chat { background: rgba(167,139,250,0.15); color: var(--accent); }
+    .badge.telegram { background: rgba(96,165,250,0.15); color: var(--blue); }
+    .badge.discord { background: rgba(251,191,36,0.15); color: var(--yellow); }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-state h2 { margin-bottom: 8px; color: var(--text); }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="https://siggy-nexus.vercel.app/logo.png" alt="Siggy" onerror="this.style.display='none'">
+    <div>
+      <h1>Siggy Analytics</h1>
+      <div class="subtitle">Monitoring &amp; engagement tracking</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="setDays(1)">Today</button>
+    <button onclick="setDays(7)" class="active">7 Days</button>
+    <button onclick="setDays(14)">14 Days</button>
+    <button onclick="setDays(30)">30 Days</button>
+    <button class="refresh" onclick="loadData()">↻ Refresh</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <div id="dashboard"></div>
+
+  <script>
+    const API_URL = 'https://siggy-nexus.vercel.app/api/analytics';
+    let currentDays = 7;
+
+    function setDays(d) {
+      currentDays = d;
+      document.querySelectorAll('.controls button:not(.refresh)').forEach((b, i) => {
+        b.classList.toggle('active', [1,7,14,30][i] === d);
+      });
+      loadData();
+    }
+
+    async function loadData() {
+      const status = document.getElementById('status');
+      status.innerHTML = '<span class="spinner"></span> Loading...';
+      try {
+        const res = await fetch(`${API_URL}?days=${currentDays}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        render(data);
+        status.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+      } catch (e) {
+        status.textContent = `Error: ${e.message}`;
+        document.getElementById('dashboard').innerHTML = `
+          <div class="empty-state">
+            <h2>Cannot connect</h2>
+            <p>Make sure Vercel KV is enabled and the app is deployed.</p>
+            <p style="margin-top:8px;font-size:12px">${escapeHtml(e.message)}</p>
+          </div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function render(data) {
+      const daily = data.daily || [];
+      const recent = data.recent || [];
+
+      // Aggregate totals across the date range
+      let totalRequests = 0, totalErrors = 0, totalRateLimits = 0;
+      const routeTotals = { chat: 0, telegram: 0, discord: 0 };
+      const personalityTotals = {};
+      const hourlyTotals = {};
+      for (let h = 0; h < 24; h++) hourlyTotals[String(h).padStart(2, '0')] = 0;
+
+      for (const day of daily) {
+        totalRequests += day.total;
+        totalErrors += day.errors;
+        totalRateLimits += day.rateLimits || 0;
+        for (const [r, v] of Object.entries(day.routes || {})) routeTotals[r] = (routeTotals[r] || 0) + v;
+        for (const [p, v] of Object.entries(day.personalities || {})) personalityTotals[p] = (personalityTotals[p] || 0) + v;
+        for (const [h, v] of Object.entries(day.hours || {})) hourlyTotals[h] = (hourlyTotals[h] || 0) + v;
+      }
+
+      const uniqueUsersToday = daily.length > 0 ? daily[0].uniqueUsers : 0;
+      const successRate = totalRequests > 0 ? ((totalRequests - totalErrors) / totalRequests * 100).toFixed(1) : '100';
+
+      // Find peak hour
+      let peakHour = '00', peakCount = 0;
+      for (const [h, v] of Object.entries(hourlyTotals)) {
+        if (v > peakCount) { peakCount = v; peakHour = h; }
+      }
+
+      const dashboard = document.getElementById('dashboard');
+
+      // KPI Cards
+      let html = `<div class="grid">
+        <div class="card">
+          <div class="label">Total Requests</div>
+          <div class="value accent">${totalRequests.toLocaleString()}</div>
+          <div class="sub">Last ${currentDays} day${currentDays > 1 ? 's' : ''}</div>
+        </div>
+        <div class="card">
+          <div class="label">Success Rate</div>
+          <div class="value green">${successRate}%</div>
+          <div class="sub">${totalErrors} error${totalErrors !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="card">
+          <div class="label">Rate Limits</div>
+          <div class="value ${totalRateLimits > 0 ? 'red' : 'green'}">${totalRateLimits}</div>
+          <div class="sub">429 responses</div>
+        </div>
+        <div class="card">
+          <div class="label">Unique Users Today</div>
+          <div class="value">${uniqueUsersToday}</div>
+          <div class="sub">By hashed ID</div>
+        </div>
+        <div class="card">
+          <div class="label">Peak Hour (UTC)</div>
+          <div class="value">${peakHour}:00</div>
+          <div class="sub">${peakCount} request${peakCount !== 1 ? 's' : ''}</div>
+        </div>
+      </div>`;
+
+      // Charts row
+      html += `<div class="charts">`;
+
+      // Daily requests bar chart
+      const recentDays = [...daily].reverse().slice(-14);
+      const maxDaily = Math.max(...recentDays.map(d => d.total), 1);
+      html += `<div class="chart-card"><h3>Requests / Day</h3><div class="bar-chart">`;
+      for (const day of recentDays) {
+        const pct = (day.total / maxDaily * 100).toFixed(0);
+        const label = day.date.slice(5); // MM-DD
+        html += `<div class="bar-group">
+          <div class="bar-value">${day.total || ''}</div>
+          <div class="bar" style="height:${pct}%;${day.errors > 0 ? 'background:var(--red)' : ''}"></div>
+          <div class="bar-label">${label}</div>
+        </div>`;
+      }
+      html += `</div></div>`;
+
+      // Hourly distribution
+      const maxHourly = Math.max(...Object.values(hourlyTotals), 1);
+      html += `<div class="chart-card"><h3>Hourly Distribution (UTC)</h3><div class="bar-chart">`;
+      for (let h = 0; h < 24; h++) {
+        const hk = String(h).padStart(2, '0');
+        const v = hourlyTotals[hk] || 0;
+        const pct = (v / maxHourly * 100).toFixed(0);
+        html += `<div class="bar-group">
+          <div class="bar-value">${v || ''}</div>
+          <div class="bar" style="height:${pct}%"></div>
+          <div class="bar-label">${h}</div>
+        </div>`;
+      }
+      html += `</div></div>`;
+
+      // Route breakdown
+      const routeColors = { chat: 'var(--accent)', telegram: 'var(--blue)', discord: 'var(--yellow)' };
+      const maxRoute = Math.max(...Object.values(routeTotals), 1);
+      html += `<div class="chart-card"><h3>Route Breakdown</h3><div class="hbar-chart">`;
+      for (const [route, count] of Object.entries(routeTotals)) {
+        const pct = (count / maxRoute * 100).toFixed(0);
+        html += `<div class="hbar-row">
+          <div class="hbar-name">${route}</div>
+          <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${routeColors[route] || 'var(--accent)'}"></div></div>
+          <div class="hbar-count">${count}</div>
+        </div>`;
+      }
+      html += `</div></div>`;
+
+      // Personality distribution
+      const personalityColors = { Aether: '#a78bfa', Forge: '#f97316', Rift: '#ef4444', Loom: '#06b6d4', Edge: '#10b981', Auto: '#888' };
+      const maxP = Math.max(...Object.values(personalityTotals), 1);
+      html += `<div class="chart-card"><h3>Personality Distribution</h3><div class="hbar-chart">`;
+      for (const [p, count] of Object.entries(personalityTotals).sort((a, b) => b[1] - a[1])) {
+        const pct = (count / maxP * 100).toFixed(0);
+        html += `<div class="hbar-row">
+          <div class="hbar-name">${escapeHtml(p)}</div>
+          <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${personalityColors[p] || 'var(--accent)'}"></div></div>
+          <div class="hbar-count">${count}</div>
+        </div>`;
+      }
+      html += `</div></div>`;
+      html += `</div>`; // close .charts
+
+      // Recent requests table
+      html += `<div class="recent-card"><h3>Recent Requests (last 50)</h3>`;
+      if (recent.length === 0) {
+        html += `<p style="color:var(--muted);font-size:13px">No requests logged yet.</p>`;
+      } else {
+        html += `<table class="recent-table"><thead><tr>
+          <th>Time</th><th>Route</th><th>Personality</th><th>Status</th><th>Response Time</th>
+        </tr></thead><tbody>`;
+        for (const r of recent) {
+          const time = new Date(r.timestamp).toLocaleString();
+          const statusBadge = r.success
+            ? '<span class="badge success">OK</span>'
+            : `<span class="badge error">${escapeHtml(r.errorType || 'error')}</span>`;
+          html += `<tr>
+            <td>${escapeHtml(time)}</td>
+            <td><span class="badge ${r.route}">${escapeHtml(r.route)}</span></td>
+            <td>${escapeHtml(r.personality)}</td>
+            <td>${statusBadge}</td>
+            <td>${r.responseTimeMs}ms</td>
+          </tr>`;
+        }
+        html += `</tbody></table>`;
+      }
+      html += `</div>`;
+
+      dashboard.innerHTML = html;
+    }
+
+    // Auto-refresh every 60 seconds
+    setInterval(loadData, 60000);
+    loadData();
+  </script>
+</body>
+</html>
